@@ -65,7 +65,7 @@ def enumerate_packages():
         log(f'Discovered list: {list}')
         with open(list) as file:
             for line in file.readlines():
-                stripped_line = line.rstrip('\n')
+                stripped_line = line.rstrip('\r\n')
                 if stripped_line == '':             # Ignore whitespace
                     continue
                 if stripped_line.startswith('#'):   # Ignore comments
