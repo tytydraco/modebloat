@@ -46,8 +46,14 @@ def disable_package(pkg):
         log(f'Skipping package: {pkg}')
         return
     
+    log(f'Uninstall package: {pkg}...')
+    command(['adb', 'shell', f'pm uninstall {pkg}'])
+
     log(f'Disabling package: {pkg}...')
     command(['adb', 'shell', f'pm disable-user {pkg}'])
+
+    log(f'Clearing package: {pkg}...')
+    command(['adb', 'shell', f'pm clear {pkg}'])
 
     disabled_packages.append(pkg)
 
