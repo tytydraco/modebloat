@@ -14,6 +14,7 @@ dname = os.path.dirname(abspath)
 os.chdir(dname)
 
 disabled_packages = []
+enabled_packages = []
 
 def log(str):
     print(f'{LOG_TAG} {str}')
@@ -36,7 +37,7 @@ def wait_for_device():
     log('Device located')
 
 def package_check(pkg):
-    return command(['adb', 'shell', f'pm list packages -e | grep "^package:{pkg}$"']) != ''
+    return pkg in enabled_packages
 
 def disable_package(pkg):
     global disabled_packages
@@ -58,8 +59,15 @@ def prepare_dir(dir):
     if not os.path.exists(dir):
         os.mkdir(dir)
 
-def enumerate_packages():
-    log('Enumerating packages...')
+def enumerate_enabled_packages():
+    log('Enumerating enabled packages...')
+    return command(['adb', 'shell', 'pm list packages -e']) \
+        .replace('package:', '') \
+        .strip() \
+        .split('\n')
+
+def enumerate_disabled_packages():
+    log('Enumerating disabled packages...')
     packages = []
     for list in glob.glob(f'{DIR_BLOATLIST}/**/*.{LIST_TYPE}', recursive = True):
         log(f'Discovered list: {list}')
@@ -86,9 +94,11 @@ def generate_disable_list():
 def main():
     adb_check()
     prepare_dir(DIR_BLOATLIST)
-    pkgs = enumerate_packages()
+    disabled_pkgs = enumerate_disabled_packages()
     wait_for_device()
-    disable_packages(pkgs)
+    enabled_packages = enumerate_enabled_packages()
+    print(enabled_packages)
+    disable_packages(disabled_pkgs)
     generate_disable_list()
 
 main()
