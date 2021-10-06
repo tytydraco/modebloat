@@ -13,6 +13,7 @@ abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 os.chdir(dname)
 
+bloat_packages = []
 disabled_packages = []
 enabled_packages = []
 
@@ -37,8 +38,10 @@ def wait_for_device():
     log('Device located')
 
 def disable_package(pkg):
-    global disabled_packages
-    
+    if pkg in disabled_packages:
+        log(f'Skipping package: {pkg}...')
+        return
+
     log(f'Uninstall package: {pkg}...')
     command(['adb', 'shell', f'pm uninstall {pkg}'])
 
@@ -48,10 +51,8 @@ def disable_package(pkg):
     log(f'Clearing package: {pkg}...')
     command(['adb', 'shell', f'pm clear {pkg}'])
 
-    disabled_packages.append(pkg)
-
-def disable_packages(pkgs):
-    for pkg in pkgs:
+def disable_bloatware():
+    for pkg in bloat_packages:
         disable_package(pkg)
 
 def prepare_dir(dir):
@@ -59,15 +60,27 @@ def prepare_dir(dir):
         os.mkdir(dir)
 
 def enumerate_enabled_packages():
+    global enabled_packages
+
     log('Enumerating enabled packages...')
-    return command(['adb', 'shell', 'pm list packages -e']) \
+    enabled_packages = command(['adb', 'shell', 'pm list packages -e']) \
+        .replace('package:', '') \
+        .strip() \
+        .split('\n')
+    
+def enumerate_disabled_packages():
+    global disabled_packages
+
+    log('Enumerating disabled packages...')
+    disabled_packages = command(['adb', 'shell', 'pm list packages -d']) \
         .replace('package:', '') \
         .strip() \
         .split('\n')
 
-def enumerate_disabled_packages():
+def enumerate_bloat_lists():
+    global bloat_packages
+    
     log('Enumerating disabled packages...')
-    packages = []
     for list in glob.glob(f'{DIR_BLOATLIST}/**/*.{LIST_TYPE}', recursive = True):
         log(f'Discovered list: {list}')
         with open(list) as file:
@@ -77,12 +90,11 @@ def enumerate_disabled_packages():
                     continue
                 if stripped_line.startswith('#'):   # Ignore comments
                     continue
-                if stripped_line in packages:
+                if stripped_line in bloat_packages:
                     continue
 
                 log(f'Found bloatware: {stripped_line}')
-                packages.append(stripped_line)
-    return packages
+                bloat_packages.append(stripped_line)
 
 def generate_disable_list():
     if disabled_packages == []:
@@ -95,10 +107,11 @@ def generate_disable_list():
 def main():
     adb_check()
     prepare_dir(DIR_BLOATLIST)
-    bloatware = enumerate_disabled_packages()
+    enumerate_bloat_lists()
     wait_for_device()
-    enabled_packages = enumerate_enabled_packages()
-    disable_packages(bloatware)
+    enumerate_disabled_packages()
+    enumerate_enabled_packages()
+    disable_bloatware()
     generate_disable_list()
 
 main()
