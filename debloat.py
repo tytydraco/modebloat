@@ -77,6 +77,8 @@ def enumerate_disabled_packages():
                     continue
                 if stripped_line.startswith('#'):   # Ignore comments
                     continue
+                if stripped_line in packages:
+                    continue
 
                 log(f'Found bloatware: {stripped_line}')
                 packages.append(stripped_line)
@@ -93,10 +95,10 @@ def generate_disable_list():
 def main():
     adb_check()
     prepare_dir(DIR_BLOATLIST)
-    disabled_pkgs = enumerate_disabled_packages()
+    bloatware = enumerate_disabled_packages()
     wait_for_device()
     enabled_packages = enumerate_enabled_packages()
-    disable_packages(disabled_pkgs)
+    disable_packages(bloatware)
     generate_disable_list()
 
 main()
