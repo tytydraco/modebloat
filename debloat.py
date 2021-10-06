@@ -48,12 +48,26 @@ def disable_package(pkg):
     log(f'Disabling package: {pkg}...')
     command(['adb', 'shell', f'pm disable-user {pkg}'])
 
+def clear_package(pkg):
+    log(f'Stopping package: {pkg}...')
+    command(['adb', 'shell', f'am force-stop {pkg}'])
+
     log(f'Clearing package: {pkg}...')
     command(['adb', 'shell', f'pm clear {pkg}'])
+
+    log(f'Disabling package again: {pkg}...')
+    command(['adb', 'shell', f'pm disable-user {pkg}'])
 
 def disable_bloatware():
     for pkg in bloat_packages:
         disable_package(pkg)
+
+    log(f'Rebooting...')
+    command(['adb', 'reboot'])
+    wait_for_device()
+
+    for pkg in bloat_packages:
+        clear_package(pkg)
 
 def prepare_dir(dir):
     if not os.path.exists(dir):
@@ -92,6 +106,8 @@ def enumerate_bloat_lists():
                     continue
                 if stripped_line in bloat_packages:
                     continue
+                if stripped_line not in enabled_packages and stripped_line not in disabled_packages:
+                    continue
 
                 log(f'Found bloatware: {stripped_line}')
                 bloat_packages.append(stripped_line)
@@ -107,10 +123,10 @@ def generate_disable_list():
 def main():
     adb_check()
     prepare_dir(DIR_BLOATLIST)
-    enumerate_bloat_lists()
     wait_for_device()
     enumerate_disabled_packages()
     enumerate_enabled_packages()
+    enumerate_bloat_lists()
     disable_bloatware()
     generate_disable_list()
 
