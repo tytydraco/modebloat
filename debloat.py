@@ -36,15 +36,8 @@ def wait_for_device():
     command(['adb', 'wait-for-device'])
     log('Device located')
 
-def package_check(pkg):
-    return pkg in enabled_packages
-
 def disable_package(pkg):
     global disabled_packages
-
-    if package_check(pkg) == False:
-        log(f'Skipping package: {pkg}')
-        return
     
     log(f'Uninstall package: {pkg}...')
     command(['adb', 'shell', f'pm uninstall {pkg}'])
@@ -103,7 +96,6 @@ def main():
     disabled_pkgs = enumerate_disabled_packages()
     wait_for_device()
     enabled_packages = enumerate_enabled_packages()
-    print(enabled_packages)
     disable_packages(disabled_pkgs)
     generate_disable_list()
 
