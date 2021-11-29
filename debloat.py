@@ -13,7 +13,7 @@ abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 os.chdir(dname)
 
-bloat_packages = []
+bloat_packages = set()
 disabled_packages = []
 enabled_packages = []
 
@@ -110,7 +110,7 @@ def enumerate_bloat_lists():
                     continue
 
                 log(f'Found bloatware: {stripped_line}')
-                bloat_packages.append(stripped_line)
+                bloat_packages.add(stripped_line)
 
 def generate_disable_list():
     if disabled_packages == []:
