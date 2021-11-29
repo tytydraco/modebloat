@@ -3,6 +3,7 @@ import os
 import glob
 import subprocess
 import shutil
+import time
 
 DIR_BLOATLIST =     'bloatlists'
 FILE_DISABLED =     'disabled.txt'
@@ -35,11 +36,12 @@ def parse_args():
     parser.add_argument('-i', '--interactive', action='store_true', help='Decide what to do with each bloat package')
     parser.add_argument('-n', '--noclear', action='store_true', help='Do not reboot and clear package data after')
     parser.add_argument('-N', '--nolog', action='store_true', help='Do not log disabled packages to a file')
+    parser.add_argument('-c', '--clear', action='store_true', help='Clear disabled packages right away, skips disabling step')
     args = parser.parse_args()
 
 def command(str):
     out = subprocess.run(str, stdout = subprocess.PIPE).stdout
-    return out.decode()
+    return out.decode().strip()
 
 def adb_check():
     if shutil.which('adb') is None:
@@ -49,6 +51,11 @@ def wait_for_device():
     dbg('Waiting for device to be detected...')
     command(['adb', 'wait-for-device'])
     dbg('Device located')
+
+    dbg('Waiting for boot to complete...')
+    while command(['adb', 'shell', 'getprop', 'sys.boot_completed']) != '1':
+        time.sleep(1)
+    dbg('Boot completed')
 
 def disable_package(pkg):
     if pkg in disabled_packages:
@@ -77,15 +84,16 @@ def clear_package(pkg):
     command(['adb', 'shell', f'pm disable-user {pkg}'])
 
 def disable_bloatware():
-    for pkg in bloat_packages:
-        disable_package(pkg)
+    if not args.clear:
+        for pkg in bloat_packages:
+            disable_package(pkg)
 
-    if args.noclear:
-        return
+        if args.noclear:
+            return
 
-    dbg(f'Rebooting...')
-    command(['adb', 'reboot'])
-    wait_for_device()
+        dbg(f'Rebooting...')
+        command(['adb', 'reboot'])
+        wait_for_device()
 
     for pkg in bloat_packages:
         clear_package(pkg)
@@ -156,7 +164,7 @@ def main():
 
     disable_bloatware()
 
-    if ! args.nolog:
+    if not args.nolog:
         generate_disable_list()
 
 main()
