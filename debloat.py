@@ -34,6 +34,7 @@ def parse_args():
     parser.add_argument('-e', '--enum', action='store_true', help='Enumerate matching bloatware packages without making any changes')
     parser.add_argument('-i', '--interactive', action='store_true', help='Decide what to do with each bloat package')
     parser.add_argument('-n', '--noclear', action='store_true', help='Do not reboot and clear package data after')
+    parser.add_argument('-N', '--nolog', action='store_true', help='Do not log disabled packages to a file')
     args = parser.parse_args()
 
 def command(str):
@@ -154,6 +155,8 @@ def main():
         exit()
 
     disable_bloatware()
-    generate_disable_list()
+
+    if ! args.nolog:
+        generate_disable_list()
 
 main()
