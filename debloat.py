@@ -128,14 +128,12 @@ def enumerate_bloat_lists():
         dbg(f'Discovered list: {list}')
         with open(list) as file:
             for line in file.readlines():
-                stripped_line = line.rstrip('\r\n')
+                stripped_line = line.strip()
                 if stripped_line == '':             # Ignore whitespace
                     continue
                 if stripped_line.startswith('#'):   # Ignore comments
                     continue
-                if stripped_line in bloat_packages:
-                    continue
-                if stripped_line not in enabled_packages and stripped_line not in disabled_packages:
+                if stripped_line not in enabled_packages:
                     continue
 
                 dbg(f'Found bloatware: {stripped_line}')
@@ -158,7 +156,7 @@ def main():
     enumerate_enabled_packages()
     enumerate_bloat_lists()
 
-    if args.enum:
+    if args.enum and bloat_packages != []:
         print('\n'.join(bloat_packages))
         exit()
 
