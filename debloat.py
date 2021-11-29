@@ -32,6 +32,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description='A modular Android debloating tool')
     parser.add_argument('-v', '--verbose', action='store_true', help='Log in verbose mode')
     parser.add_argument('-e', '--enum', action='store_true', help='Enumerate matching bloatware packages without making any changes')
+    parser.add_argument('-i', '--interactive', action='store_true', help='Decide what to do with each bloat package')
+    parser.add_argument('-n', '--noclear', action='store_true', help='Do not reboot and clear package data after')
     args = parser.parse_args()
 
 def command(str):
@@ -52,6 +54,11 @@ def disable_package(pkg):
         dbg(f'Skipping package: {pkg}...')
         return
 
+    if args.interactive:
+        decision = input(f'  [y/n] >>> {pkg}: ')
+        if decision.lower() != 'y':
+            return
+
     dbg(f'Uninstall package: {pkg}...')
     command(['adb', 'shell', f'pm uninstall {pkg}'])
 
@@ -71,6 +78,9 @@ def clear_package(pkg):
 def disable_bloatware():
     for pkg in bloat_packages:
         disable_package(pkg)
+
+    if args.noclear:
+        return
 
     dbg(f'Rebooting...')
     command(['adb', 'reboot'])
