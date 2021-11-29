@@ -146,7 +146,7 @@ def generate_disable_list():
         return
 
     with open(FILE_DISABLED, 'w') as file:
-        file.writelines(disabled_packages)
+        file.write('\n'.join(disabled_packages))
     dbg(f'Logged disabled packages: {FILE_DISABLED}')
 
 def main():
