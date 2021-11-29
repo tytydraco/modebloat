@@ -1,3 +1,4 @@
+import argparse
 import os
 import glob
 import subprocess
@@ -6,7 +7,7 @@ import shutil
 DIR_BLOATLIST =     'bloatlists'
 FILE_DISABLED =     'disabled.txt'
 LIST_TYPE =         'txt'
-LOG_TAG =           '[*]'
+DBG_TAG =           '[*]'
 ERR_TAG =           '[!]'
 
 abspath = os.path.abspath(__file__)
@@ -17,12 +18,21 @@ bloat_packages = set()
 disabled_packages = []
 enabled_packages = []
 
-def log(str):
-    print(f'{LOG_TAG} {str}')
+def dbg(str):
+    if args.verbose:
+        print(f'{DBG_TAG} {str}')
 
 def err(str):
     print(f'{ERR_TAG} {str}')
     exit(1)
+
+def parse_args():
+    global args
+
+    parser = argparse.ArgumentParser(description='A modular Android debloating tool')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Log in verbose mode')
+    parser.add_argument('-e', '--enum', action='store_true', help='Enumerate matching bloatware packages without making any changes')
+    args = parser.parse_args()
 
 def command(str):
     out = subprocess.run(str, stdout = subprocess.PIPE).stdout
@@ -33,36 +43,36 @@ def adb_check():
         err('adb binary not found!')
 
 def wait_for_device():
-    log('Waiting for device to be detected...')
+    dbg('Waiting for device to be detected...')
     command(['adb', 'wait-for-device'])
-    log('Device located')
+    dbg('Device located')
 
 def disable_package(pkg):
     if pkg in disabled_packages:
-        log(f'Skipping package: {pkg}...')
+        dbg(f'Skipping package: {pkg}...')
         return
 
-    log(f'Uninstall package: {pkg}...')
+    dbg(f'Uninstall package: {pkg}...')
     command(['adb', 'shell', f'pm uninstall {pkg}'])
 
-    log(f'Disabling package: {pkg}...')
+    dbg(f'Disabling package: {pkg}...')
     command(['adb', 'shell', f'pm disable-user {pkg}'])
 
 def clear_package(pkg):
-    log(f'Stopping package: {pkg}...')
+    dbg(f'Stopping package: {pkg}...')
     command(['adb', 'shell', f'am force-stop {pkg}'])
 
-    log(f'Clearing package: {pkg}...')
+    dbg(f'Clearing package: {pkg}...')
     command(['adb', 'shell', f'pm clear {pkg}'])
 
-    log(f'Disabling package again: {pkg}...')
+    dbg(f'Disabling package again: {pkg}...')
     command(['adb', 'shell', f'pm disable-user {pkg}'])
 
 def disable_bloatware():
     for pkg in bloat_packages:
         disable_package(pkg)
 
-    log(f'Rebooting...')
+    dbg(f'Rebooting...')
     command(['adb', 'reboot'])
     wait_for_device()
 
@@ -76,7 +86,7 @@ def prepare_dir(dir):
 def enumerate_enabled_packages():
     global enabled_packages
 
-    log('Enumerating enabled packages...')
+    dbg('Enumerating enabled packages...')
     enabled_packages = command(['adb', 'shell', 'pm list packages -e']) \
         .replace('package:', '') \
         .strip() \
@@ -85,7 +95,7 @@ def enumerate_enabled_packages():
 def enumerate_disabled_packages():
     global disabled_packages
 
-    log('Enumerating disabled packages...')
+    dbg('Enumerating disabled packages...')
     disabled_packages = command(['adb', 'shell', 'pm list packages -d']) \
         .replace('package:', '') \
         .strip() \
@@ -94,9 +104,9 @@ def enumerate_disabled_packages():
 def enumerate_bloat_lists():
     global bloat_packages
     
-    log('Enumerating disabled packages...')
+    dbg('Enumerating disabled packages...')
     for list in glob.glob(f'{DIR_BLOATLIST}/**/*.{LIST_TYPE}', recursive = True):
-        log(f'Discovered list: {list}')
+        dbg(f'Discovered list: {list}')
         with open(list) as file:
             for line in file.readlines():
                 stripped_line = line.rstrip('\r\n')
@@ -109,7 +119,7 @@ def enumerate_bloat_lists():
                 if stripped_line not in enabled_packages and stripped_line not in disabled_packages:
                     continue
 
-                log(f'Found bloatware: {stripped_line}')
+                dbg(f'Found bloatware: {stripped_line}')
                 bloat_packages.add(stripped_line)
 
 def generate_disable_list():
@@ -118,15 +128,21 @@ def generate_disable_list():
 
     with open(FILE_DISABLED, 'w') as file:
         file.writelines(disabled_packages)
-    log(f'Logged disabled packages: {FILE_DISABLED}')
+    dbg(f'Logged disabled packages: {FILE_DISABLED}')
 
 def main():
+    parse_args()
     adb_check()
     prepare_dir(DIR_BLOATLIST)
     wait_for_device()
     enumerate_disabled_packages()
     enumerate_enabled_packages()
     enumerate_bloat_lists()
+
+    if args.enum:
+        print('\n'.join(bloat_packages))
+        exit()
+
     disable_bloatware()
     generate_disable_list()
 
