@@ -55,7 +55,7 @@ def disable_package(pkg):
         return
 
     if args.interactive:
-        decision = input(f'  [y/n] >>> {pkg}: ')
+        decision = input(f'INTERACTIVE [y/n]: {pkg}: ')
         if decision.lower() != 'y':
             return
 
