@@ -37,6 +37,8 @@ def parse_args():
     parser.add_argument('-n', '--noclear', action='store_true', help='Do not reboot and clear package data after')
     parser.add_argument('-N', '--nolog', action='store_true', help='Do not log disabled packages to a file')
     parser.add_argument('-c', '--clear', action='store_true', help='Clear disabled packages right away, skips disabling step')
+    parser.add_argument('-f', '--force', action='store_true', help='Perform actions on all found packages, even already disabled ones')
+
     args = parser.parse_args()
 
 def command(str):
@@ -133,7 +135,7 @@ def enumerate_bloat_lists():
                     continue
                 if stripped_line.startswith('#'):   # Ignore comments
                     continue
-                if stripped_line not in enabled_packages:
+                if not args.force and stripped_line not in enabled_packages:
                     continue
 
                 dbg(f'Found bloatware: {stripped_line}')
