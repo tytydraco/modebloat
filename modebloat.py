@@ -54,6 +54,7 @@ def wait_for_device():
     command(['adb', 'wait-for-device'])
     dbg('Device located')
 
+def wait_for_boot():
     dbg('Waiting for boot to complete...')
     while command(['adb', 'shell', 'getprop', 'sys.boot_completed']) != '1':
         time.sleep(1)
@@ -100,6 +101,7 @@ def disable_bloatware():
         dbg(f'Rebooting...')
         command(['adb', 'reboot'])
         wait_for_device()
+        wait_for_boot()
 
     for pkg in bloat_packages:
         clear_package(pkg)
