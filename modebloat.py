@@ -57,6 +57,10 @@ def wait_for_device():
     dbg('Waiting for boot to complete...')
     while command(['adb', 'shell', 'getprop', 'sys.boot_completed']) != '1':
         time.sleep(1)
+    
+    dbg('Waiting ten more seconds for good measure...')
+    time.sleep(10)
+
     dbg('Boot completed')
 
 def disable_package(pkg):
