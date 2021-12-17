@@ -123,7 +123,7 @@ def enumerate_disabled_packages():
 def enumerate_bloat_lists():
     global bloat_packages
     
-    dbg('Enumerating disabled packages...')
+    dbg('Enumerating bloat lists...')
     for list in glob.glob(f'{DIR_BLOATLIST}/**/*.{LIST_TYPE}', recursive = True):
         dbg(f'Discovered list: {list}')
         with open(list) as file:
